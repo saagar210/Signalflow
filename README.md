@@ -15,6 +15,10 @@ Built with Tauri 2, React 19, and Rust. Everything runs on your machine. No clou
 - Run regex transforms, text templates, conditional routing
 - Talk to local LLMs via Ollama — prompt nodes, chat nodes, the works
 - Watch execution animate through your graph in real time
+- Manage multiple flows — create, open, save, delete from the welcome screen or command palette
+- See data flowing through your pipeline with inline node previews and a collapsible JSON inspector
+- Catch mistakes early with pre-run validation that highlights misconfigured nodes
+- Configure nodes with specialized editors — file pickers, model selectors, sliders, key-value editors
 - Undo/redo everything, auto-save to SQLite, dark/light themes
 
 ## The Stack
@@ -41,10 +45,38 @@ Built with Tauri 2, React 19, and Rust. Everything runs on your machine. No clou
 | Input | Text Input, Number Input, File Read, HTTP Request |
 | Transform | JSON Parse, Text Template, Regex, Filter, Map, Merge, Split |
 | Output | File Write, Debug |
-| Control | Conditional (if/else branching) |
+| Control | Conditional (if/else branching), Code (JavaScript) |
 | AI | LLM Prompt, LLM Chat |
 
-Every node has typed ports (String, Number, Boolean, Array, Object, File, Any) with color-coded handles and connection validation.
+Every node has typed ports (String, Number, Boolean, Array, Object, File, Any) with color-coded handles and connection validation. Nodes display inline config previews and output data directly on the canvas.
+
+## Key Features
+
+### Flow Management
+- **Welcome screen** with recent flows list on startup
+- **Auto-load** your last flow when you relaunch
+- **Command palette** (Cmd+K) with New Flow, Open Flow, Save As, Delete Flow
+- **Unsaved changes detection** with confirmation dialogs
+
+### Smart Node Configuration
+- **Config schema system** — each node type declares its fields, and the inspector renders specialized widgets automatically
+- **File path picker** — native OS file dialogs for File Read/Write nodes
+- **Model selector** — dropdown populated from your local Ollama models with availability detection
+- **Sliders, dropdowns, key-value editors, checkboxes** — the right widget for each field
+
+### Data Visibility
+- **Inline output previews** on every node after execution (strings, arrays, objects, errors)
+- **Collapsible JSON tree** in the inspector with type badges and copy-to-clipboard
+- **50KB output cap** to keep the UI responsive on large payloads
+
+### Pre-Run Validation
+- Catches disconnected required inputs, empty config values, and orphan nodes
+- **Clickable warnings** that select the problem node on the canvas
+- Warnings shown as toasts and in the execution panel before logs
+
+### Toast Notifications
+- Success, error, warning, and info toasts for save, execution, validation, and flow management
+- Auto-dismiss after 4 seconds, max 5 visible
 
 ## Getting Started
 
@@ -54,6 +86,7 @@ Every node has typed ports (String, Number, Boolean, Array, Object, File, Any) w
 - [pnpm](https://pnpm.io/) 9+
 - [Rust](https://www.rust-lang.org/tools/install) stable
 - [Tauri 2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS
+- [Ollama](https://ollama.com/) (optional, for AI nodes)
 
 ### Run in Dev Mode
 
@@ -73,8 +106,8 @@ The `.dmg` (macOS) or installer lands in `src-tauri/target/release/bundle/`.
 ### Run Tests
 
 ```bash
-pnpm test          # Frontend (Vitest, 16 tests)
-cd src-tauri && cargo test  # Backend (12 tests)
+pnpm test                      # Frontend (Vitest, 21 tests)
+cd src-tauri && cargo test     # Backend (12 tests)
 ```
 
 ## Keyboard Shortcuts
@@ -94,10 +127,17 @@ cd src-tauri && cargo test  # Backend (12 tests)
 
 ```
 src/                    # React frontend
-  components/           # Canvas, nodes, palette, panels, toolbar
+  components/
+    canvas/             # Flow canvas, animated edges
+    command-palette/    # Cmd+K command palette with flow management
+    nodes/              # BaseNode + 12 specialized node components + DataPreview
+    panels/             # Inspector, execution panel, config field editors (9 widgets)
+    shared/             # Toast, ConfirmDialog
+    toolbar/            # Top toolbar, status bar
+    welcome/            # Welcome screen with recent flows
   stores/               # Zustand stores (flow, execution, UI, project)
-  hooks/                # useExecution, useSaveFlow, useDragAndDrop
-  lib/                  # Node registry, port types, connection validation
+  hooks/                # useExecution, useSaveFlow, useFlowManager, useToast
+  lib/                  # Node registry, port types, flow validator, Tauri IPC
 
 src-tauri/src/          # Rust backend
   engine/               # Graph builder, layer executor, execution context
@@ -109,12 +149,14 @@ src-tauri/src/          # Rust backend
 
 ## How Execution Works
 
-1. Frontend serializes the graph into a `FlowDocument`
-2. Rust builds a `petgraph::DiGraph`, runs toposort, detects cycles
-3. Nodes are grouped into layers by dependency depth
-4. Each layer executes sequentially; independent nodes within a layer could run in parallel
-5. Progress events stream back to the frontend via Tauri Channels
-6. Nodes light up (blue = running, green = done, red = error) and edges animate
+1. Frontend validates the flow graph (checks connections, config, orphans)
+2. Serializes the graph into a `FlowDocument` and sends to Rust
+3. Rust builds a `petgraph::DiGraph`, runs toposort, detects cycles
+4. Nodes are grouped into layers by dependency depth
+5. Each layer executes sequentially; independent nodes within a layer could run in parallel
+6. Progress events stream back to the frontend via Tauri Channels, including full output data
+7. Nodes light up (blue = running, green = done, red = error) and edges animate
+8. Output previews appear inline on each node; full data available in the inspector
 
 Cancellation is instant — an `AtomicBool` flag is checked between each layer.
 
