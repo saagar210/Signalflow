@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { FlowCanvas } from "./components/canvas/FlowCanvas";
 import { NodePalette } from "./components/palette/NodePalette";
@@ -10,17 +10,32 @@ import { useUiStore } from "./stores/uiStore";
 import { useFlowStore } from "./stores/flowStore";
 import { useProjectStore } from "./stores/projectStore";
 import { ErrorBoundary } from "./components/shared/ErrorBoundary";
+import { ToastProvider } from "./components/shared/Toast";
+import { WelcomeScreen } from "./components/welcome/WelcomeScreen";
 import { useExecution } from "./hooks/useExecution";
 import { useSaveFlow } from "./hooks/useSaveFlow";
+import { useFlowManager } from "./hooks/useFlowManager";
 
-export default function App() {
+function AppInner() {
   const isPaletteOpen = useUiStore((s) => s.isPaletteOpen);
   const isInspectorOpen = useUiStore((s) => s.isInspectorOpen);
   const isExecutionPanelOpen = useUiStore((s) => s.isExecutionPanelOpen);
   const markDirty = useProjectStore((s) => s.markDirty);
+  const loading = useProjectStore((s) => s.loading);
+  const currentFlowId = useProjectStore((s) => s.currentFlowId);
 
   const { run } = useExecution();
   const { save } = useSaveFlow();
+  const { loadLastFlow } = useFlowManager();
+
+  // Startup: load last flow or show welcome
+  const [startupDone, setStartupDone] = useState(false);
+  useEffect(() => {
+    if (!startupDone) {
+      setStartupDone(true);
+      loadLastFlow();
+    }
+  }, [startupDone, loadLastFlow]);
 
   // Mark dirty on any flow change
   const nodes = useFlowStore((s) => s.nodes);
@@ -50,7 +65,6 @@ export default function App() {
   // Keyboard shortcuts
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      // Ignore when typing in inputs
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
@@ -101,41 +115,53 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
+  // Show welcome screen when no flow is loaded and not loading
+  const showWelcome = !loading && nodes.length === 0 && currentFlowId === null;
+
   return (
-    <ErrorBoundary>
-      <ReactFlowProvider>
-        <div className="flex h-screen flex-col bg-canvas-bg">
-          <TopToolbar />
+    <div className="flex h-screen flex-col bg-canvas-bg">
+      <TopToolbar />
 
-          <div className="flex flex-1 overflow-hidden">
-            {isPaletteOpen && (
-              <div className="flex w-56 flex-col border-r border-panel-border bg-panel-bg">
-                <NodePalette />
-              </div>
-            )}
+      <div className="relative flex flex-1 overflow-hidden">
+        {isPaletteOpen && (
+          <div className="flex w-56 flex-col border-r border-panel-border bg-panel-bg">
+            <NodePalette />
+          </div>
+        )}
 
-            <div className="flex flex-1 flex-col overflow-hidden">
-              <div className="flex-1">
-                <FlowCanvas />
-              </div>
-
-              {isExecutionPanelOpen && (
-                <div className="h-48 border-t border-panel-border bg-panel-bg">
-                  <ExecutionPanel />
-                </div>
-              )}
-            </div>
-
-            {isInspectorOpen && (
-              <div className="flex w-64 flex-col border-l border-panel-border bg-panel-bg">
-                <InspectorPanel />
-              </div>
-            )}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="relative flex-1">
+            <FlowCanvas />
+            {showWelcome && <WelcomeScreen />}
           </div>
 
-          <StatusBar />
+          {isExecutionPanelOpen && (
+            <div className="h-48 border-t border-panel-border bg-panel-bg">
+              <ExecutionPanel />
+            </div>
+          )}
         </div>
-      </ReactFlowProvider>
+
+        {isInspectorOpen && (
+          <div className="flex w-64 flex-col border-l border-panel-border bg-panel-bg">
+            <InspectorPanel />
+          </div>
+        )}
+      </div>
+
+      <StatusBar />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <ToastProvider>
+        <ReactFlowProvider>
+          <AppInner />
+        </ReactFlowProvider>
+      </ToastProvider>
     </ErrorBoundary>
   );
 }

@@ -3,6 +3,13 @@ import { TextInputNode } from "./TextInputNode";
 import { NumberInputNode } from "./NumberInputNode";
 import { DebugNode } from "./DebugNode";
 import { TextTemplateNode } from "./TextTemplateNode";
+import { FileReadNode } from "./FileReadNode";
+import { FileWriteNode } from "./FileWriteNode";
+import { HttpRequestNode } from "./HttpRequestNode";
+import { LlmPromptNode } from "./LlmPromptNode";
+import { ConditionalNode } from "./ConditionalNode";
+import { CodeNode } from "./CodeNode";
+import { RegexNode } from "./RegexNode";
 import { GenericNode } from "./GenericNode";
 
 export const nodeTypes: NodeTypes = {
@@ -10,18 +17,18 @@ export const nodeTypes: NodeTypes = {
   numberInput: NumberInputNode,
   debug: DebugNode,
   textTemplate: TextTemplateNode,
-  // All other types use GenericNode until Phase 5+ adds custom UIs
-  fileRead: GenericNode,
-  fileWrite: GenericNode,
-  httpRequest: GenericNode,
+  fileRead: FileReadNode,
+  fileWrite: FileWriteNode,
+  httpRequest: HttpRequestNode,
+  regex: RegexNode,
+  conditional: ConditionalNode,
+  llmPrompt: LlmPromptNode,
+  llmChat: LlmPromptNode, // Same display as LlmPrompt
+  code: CodeNode,
+  // Remaining simple nodes use GenericNode
   jsonParse: GenericNode,
-  regex: GenericNode,
   filter: GenericNode,
   map: GenericNode,
   merge: GenericNode,
   split: GenericNode,
-  conditional: GenericNode,
-  llmPrompt: GenericNode,
-  llmChat: GenericNode,
-  code: GenericNode,
 };

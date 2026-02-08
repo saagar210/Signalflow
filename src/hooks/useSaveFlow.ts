@@ -1,7 +1,8 @@
 import { useCallback, useRef } from "react";
 import { useFlowStore } from "../stores/flowStore";
 import { useProjectStore } from "../stores/projectStore";
-import { saveFlow, type FlowDocument } from "../lib/tauri";
+import { saveFlow, setPreference, type FlowDocument } from "../lib/tauri";
+import { useToast } from "./useToast";
 
 export function useSaveFlow() {
   const nodes = useFlowStore((s) => s.nodes);
@@ -10,6 +11,7 @@ export function useSaveFlow() {
   const flowName = useProjectStore((s) => s.currentFlowName);
   const markSaved = useProjectStore((s) => s.markSaved);
   const isSaving = useRef(false);
+  const { toast } = useToast();
 
   const save = useCallback(async () => {
     if (isSaving.current || nodes.length === 0) return;
@@ -37,13 +39,15 @@ export function useSaveFlow() {
     try {
       const id = await saveFlow(flow);
       markSaved(id);
+      await setPreference("lastOpenFlowId", id);
+      toast({ title: "Flow saved", variant: "success" });
     } catch (e) {
-      // isDirty remains true so user knows save failed
-      console.error("Failed to save flow:", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      toast({ title: "Save failed", description: msg, variant: "error" });
     } finally {
       isSaving.current = false;
     }
-  }, [nodes, edges, flowId, flowName, markSaved]);
+  }, [nodes, edges, flowId, flowName, markSaved, toast]);
 
   return { save };
 }

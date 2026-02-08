@@ -27,6 +27,7 @@ export interface ExecutionEvent {
   type: "NodeStarted" | "NodeCompleted" | "NodeError" | "ExecutionComplete";
   node_id?: string;
   output_preview?: string;
+  output_data?: unknown;
   duration_ms?: number;
   total_duration_ms?: number;
   error?: string;
@@ -68,7 +69,13 @@ export async function loadFlow(id: string): Promise<FlowDocument> {
   return invoke("load_flow", { id });
 }
 
-export async function listFlows(): Promise<FlowDocument[]> {
+export interface FlowSummary {
+  id: string;
+  name: string;
+  updated_at: string;
+}
+
+export async function listFlows(): Promise<FlowSummary[]> {
   return invoke("list_flows");
 }
 

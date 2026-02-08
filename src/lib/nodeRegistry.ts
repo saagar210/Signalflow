@@ -5,6 +5,29 @@ export interface NodeCategory {
   label: string;
 }
 
+export interface ConfigFieldSchema {
+  key: string;
+  label: string;
+  widget:
+    | "text"
+    | "textarea"
+    | "number"
+    | "slider"
+    | "checkbox"
+    | "select"
+    | "file-path-open"
+    | "file-path-save"
+    | "key-value"
+    | "model-select";
+  options?: { label: string; value: string }[];
+  min?: number;
+  max?: number;
+  step?: number;
+  placeholder?: string;
+  rows?: number;
+  monospace?: boolean;
+}
+
 export interface NodeDefinitionMeta {
   type: string;
   label: string;
@@ -13,6 +36,7 @@ export interface NodeDefinitionMeta {
   inputs: PortDefinition[];
   outputs: PortDefinition[];
   defaultConfig: Record<string, unknown>;
+  configSchema?: ConfigFieldSchema[];
 }
 
 export const NODE_CATEGORIES: NodeCategory[] = [
@@ -33,6 +57,9 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     inputs: [],
     outputs: [{ id: "value", label: "Value", type: "string", required: false }],
     defaultConfig: { value: "" },
+    configSchema: [
+      { key: "value", label: "Value", widget: "textarea", rows: 2, placeholder: "Enter text..." },
+    ],
   },
   {
     type: "numberInput",
@@ -42,6 +69,9 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     inputs: [],
     outputs: [{ id: "value", label: "Value", type: "number", required: false }],
     defaultConfig: { value: 0 },
+    configSchema: [
+      { key: "value", label: "Value", widget: "number" },
+    ],
   },
   {
     type: "debug",
@@ -51,6 +81,7 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     inputs: [{ id: "input", label: "Input", type: "any", required: true }],
     outputs: [],
     defaultConfig: {},
+    configSchema: [],
   },
   {
     type: "textTemplate",
@@ -63,6 +94,9 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     ],
     outputs: [{ id: "result", label: "Result", type: "string", required: false }],
     defaultConfig: { template: "Hello, {{name}}!" },
+    configSchema: [
+      { key: "template", label: "Template", widget: "textarea", rows: 4, placeholder: "Hello, {{name}}!" },
+    ],
   },
   {
     type: "fileRead",
@@ -75,6 +109,9 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
       { id: "file", label: "File", type: "file", required: false },
     ],
     defaultConfig: { path: "" },
+    configSchema: [
+      { key: "path", label: "File Path", widget: "file-path-open", placeholder: "/path/to/file" },
+    ],
   },
   {
     type: "fileWrite",
@@ -87,6 +124,10 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     ],
     outputs: [{ id: "file", label: "File", type: "file", required: false }],
     defaultConfig: { path: "", append: false },
+    configSchema: [
+      { key: "path", label: "File Path", widget: "file-path-save", placeholder: "/path/to/file" },
+      { key: "append", label: "Append to file", widget: "checkbox" },
+    ],
   },
   {
     type: "httpRequest",
@@ -102,6 +143,22 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
       { id: "status", label: "Status", type: "number", required: false },
     ],
     defaultConfig: { url: "", method: "GET", headers: "{}" },
+    configSchema: [
+      { key: "url", label: "URL", widget: "text", placeholder: "https://api.example.com" },
+      {
+        key: "method",
+        label: "Method",
+        widget: "select",
+        options: [
+          { label: "GET", value: "GET" },
+          { label: "POST", value: "POST" },
+          { label: "PUT", value: "PUT" },
+          { label: "DELETE", value: "DELETE" },
+          { label: "PATCH", value: "PATCH" },
+        ],
+      },
+      { key: "headers", label: "Headers", widget: "key-value" },
+    ],
   },
   {
     type: "jsonParse",
@@ -111,6 +168,7 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     inputs: [{ id: "input", label: "Input", type: "string", required: true }],
     outputs: [{ id: "output", label: "Output", type: "object", required: false }],
     defaultConfig: {},
+    configSchema: [],
   },
   {
     type: "regex",
@@ -123,6 +181,19 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
       { id: "result", label: "Result", type: "string", required: false },
     ],
     defaultConfig: { pattern: "", flags: "g", mode: "match" },
+    configSchema: [
+      { key: "pattern", label: "Pattern", widget: "text", placeholder: "\\w+" },
+      { key: "flags", label: "Flags", widget: "text", placeholder: "g, i, m, s" },
+      {
+        key: "mode",
+        label: "Mode",
+        widget: "select",
+        options: [
+          { label: "Match", value: "match" },
+          { label: "Replace", value: "replace" },
+        ],
+      },
+    ],
   },
   {
     type: "filter",
@@ -132,6 +203,10 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     inputs: [{ id: "input", label: "Input", type: "array", required: true }],
     outputs: [{ id: "output", label: "Output", type: "array", required: false }],
     defaultConfig: { condition: "item !== null", field: "" },
+    configSchema: [
+      { key: "condition", label: "Condition", widget: "text", placeholder: "item !== null" },
+      { key: "field", label: "Field", widget: "text", placeholder: "Optional field name" },
+    ],
   },
   {
     type: "map",
@@ -141,6 +216,9 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     inputs: [{ id: "input", label: "Input", type: "array", required: true }],
     outputs: [{ id: "output", label: "Output", type: "array", required: false }],
     defaultConfig: { expression: "item" },
+    configSchema: [
+      { key: "expression", label: "Expression", widget: "text", placeholder: "item" },
+    ],
   },
   {
     type: "merge",
@@ -153,6 +231,7 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     ],
     outputs: [{ id: "output", label: "Output", type: "array", required: false }],
     defaultConfig: {},
+    configSchema: [],
   },
   {
     type: "split",
@@ -162,6 +241,20 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     inputs: [{ id: "input", label: "Input", type: "string", required: true }],
     outputs: [{ id: "output", label: "Output", type: "array", required: false }],
     defaultConfig: { delimiter: "," },
+    configSchema: [
+      {
+        key: "delimiter",
+        label: "Delimiter",
+        widget: "select",
+        options: [
+          { label: "Comma (,)", value: "," },
+          { label: "Newline (\\n)", value: "\n" },
+          { label: "Tab (\\t)", value: "\t" },
+          { label: "Pipe (|)", value: "|" },
+          { label: "Space", value: " " },
+        ],
+      },
+    ],
   },
   {
     type: "conditional",
@@ -177,6 +270,9 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
       { id: "false", label: "False", type: "any", required: false },
     ],
     defaultConfig: { expression: "input !== null" },
+    configSchema: [
+      { key: "expression", label: "Expression", widget: "text", placeholder: "input !== null" },
+    ],
   },
   {
     type: "llmPrompt",
@@ -186,6 +282,11 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     inputs: [{ id: "prompt", label: "Prompt", type: "string", required: true }],
     outputs: [{ id: "response", label: "Response", type: "string", required: false }],
     defaultConfig: { model: "llama3.2", temperature: 0.7, systemPrompt: "" },
+    configSchema: [
+      { key: "model", label: "Model", widget: "model-select" },
+      { key: "temperature", label: "Temperature", widget: "slider", min: 0, max: 2, step: 0.1 },
+      { key: "systemPrompt", label: "System Prompt", widget: "textarea", rows: 4, placeholder: "You are a helpful assistant..." },
+    ],
   },
   {
     type: "llmChat",
@@ -201,6 +302,11 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
       { id: "history", label: "History", type: "array", required: false },
     ],
     defaultConfig: { model: "llama3.2", temperature: 0.7, systemPrompt: "" },
+    configSchema: [
+      { key: "model", label: "Model", widget: "model-select" },
+      { key: "temperature", label: "Temperature", widget: "slider", min: 0, max: 2, step: 0.1 },
+      { key: "systemPrompt", label: "System Prompt", widget: "textarea", rows: 4, placeholder: "You are a helpful assistant..." },
+    ],
   },
   {
     type: "code",
@@ -210,6 +316,9 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     inputs: [{ id: "input", label: "Input", type: "any", required: false }],
     outputs: [{ id: "output", label: "Output", type: "any", required: false }],
     defaultConfig: { code: "return input;" },
+    configSchema: [
+      { key: "code", label: "Code", widget: "textarea", rows: 6, monospace: true, placeholder: "return input;" },
+    ],
   },
 ];
 

@@ -99,11 +99,27 @@ impl Engine {
                             .map(|v| v.preview(200))
                             .unwrap_or_default();
 
+                        // Serialize full output data (cap at 50KB)
+                        let output_data = {
+                            let json_map: serde_json::Map<String, serde_json::Value> = outputs
+                                .iter()
+                                .map(|(k, v)| (k.clone(), v.to_json_value()))
+                                .collect();
+                            let val = serde_json::Value::Object(json_map);
+                            let serialized = serde_json::to_string(&val).unwrap_or_default();
+                            if serialized.len() <= 50_000 {
+                                Some(val)
+                            } else {
+                                None
+                            }
+                        };
+
                         ctx.store_output(node_id, outputs).await;
 
                         let _ = channel.send(ExecutionEvent::NodeCompleted {
                             node_id: node_id.clone(),
                             output_preview: preview.clone(),
+                            output_data,
                             duration_ms,
                         });
 

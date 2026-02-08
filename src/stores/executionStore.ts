@@ -13,6 +13,7 @@ export interface ExecutionState {
   nodeStatuses: Record<string, NodeStatus>;
   nodeOutputs: Record<string, unknown>;
   nodeErrors: Record<string, string>;
+  validationWarnings: Record<string, string[]>;
   logs: LogEntry[];
   duration: number | null;
 
@@ -20,6 +21,7 @@ export interface ExecutionState {
   setNodeStatus: (nodeId: string, status: NodeStatus) => void;
   setNodeOutput: (nodeId: string, output: unknown) => void;
   setNodeError: (nodeId: string, error: string) => void;
+  setValidationWarnings: (warnings: Record<string, string[]>) => void;
   addLog: (entry: Omit<LogEntry, "timestamp">) => void;
   completeExecution: (duration: number) => void;
   failExecution: (error: string) => void;
@@ -32,6 +34,7 @@ export const useExecutionStore = create<ExecutionState>()((set) => ({
   nodeStatuses: {},
   nodeOutputs: {},
   nodeErrors: {},
+  validationWarnings: {},
   logs: [],
   duration: null,
 
@@ -41,6 +44,7 @@ export const useExecutionStore = create<ExecutionState>()((set) => ({
       nodeStatuses: {},
       nodeOutputs: {},
       nodeErrors: {},
+      validationWarnings: {},
       logs: [],
       duration: null,
     }),
@@ -60,6 +64,8 @@ export const useExecutionStore = create<ExecutionState>()((set) => ({
       nodeErrors: { ...s.nodeErrors, [nodeId]: error },
       nodeStatuses: { ...s.nodeStatuses, [nodeId]: "error" },
     })),
+
+  setValidationWarnings: (warnings) => set({ validationWarnings: warnings }),
 
   addLog: (entry) =>
     set((s) => ({
@@ -86,6 +92,7 @@ export const useExecutionStore = create<ExecutionState>()((set) => ({
       nodeStatuses: {},
       nodeOutputs: {},
       nodeErrors: {},
+      validationWarnings: {},
       logs: [],
       duration: null,
     }),

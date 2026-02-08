@@ -1,7 +1,122 @@
 import { useUiStore } from "../../stores/uiStore";
 import { useFlowStore } from "../../stores/flowStore";
 import { useExecutionStore } from "../../stores/executionStore";
-import { getNodeDefinition } from "../../lib/nodeRegistry";
+import { getNodeDefinition, type ConfigFieldSchema } from "../../lib/nodeRegistry";
+import { DataInspector } from "./DataInspector";
+import { TextField } from "./config-fields/TextField";
+import { TextareaField } from "./config-fields/TextareaField";
+import { NumberField } from "./config-fields/NumberField";
+import { CheckboxField } from "./config-fields/CheckboxField";
+import { SelectField } from "./config-fields/SelectField";
+import { SliderField } from "./config-fields/SliderField";
+import { FilePathField } from "./config-fields/FilePathField";
+import { ModelSelectField } from "./config-fields/ModelSelectField";
+import { KeyValueField } from "./config-fields/KeyValueField";
+
+function ConfigFieldRenderer({
+  field,
+  value,
+  onChange,
+}: {
+  field: ConfigFieldSchema;
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
+  switch (field.widget) {
+    case "text":
+      return (
+        <TextField
+          label={field.label}
+          value={String(value ?? "")}
+          placeholder={field.placeholder}
+          onChange={onChange}
+        />
+      );
+    case "textarea":
+      return (
+        <TextareaField
+          label={field.label}
+          value={String(value ?? "")}
+          placeholder={field.placeholder}
+          rows={field.rows}
+          monospace={field.monospace}
+          onChange={onChange}
+        />
+      );
+    case "number":
+      return (
+        <NumberField
+          label={field.label}
+          value={Number(value) || 0}
+          onChange={onChange}
+        />
+      );
+    case "checkbox":
+      return (
+        <CheckboxField
+          label={field.label}
+          checked={Boolean(value)}
+          onChange={onChange}
+        />
+      );
+    case "select":
+      return (
+        <SelectField
+          label={field.label}
+          value={String(value ?? "")}
+          options={field.options ?? []}
+          onChange={onChange}
+        />
+      );
+    case "slider":
+      return (
+        <SliderField
+          label={field.label}
+          value={Number(value) || 0}
+          min={field.min ?? 0}
+          max={field.max ?? 1}
+          step={field.step ?? 0.1}
+          onChange={onChange}
+        />
+      );
+    case "file-path-open":
+      return (
+        <FilePathField
+          label={field.label}
+          value={String(value ?? "")}
+          mode="open"
+          onChange={onChange}
+        />
+      );
+    case "file-path-save":
+      return (
+        <FilePathField
+          label={field.label}
+          value={String(value ?? "")}
+          mode="save"
+          onChange={onChange}
+        />
+      );
+    case "model-select":
+      return (
+        <ModelSelectField
+          label={field.label}
+          value={String(value ?? "")}
+          onChange={onChange}
+        />
+      );
+    case "key-value":
+      return (
+        <KeyValueField
+          label={field.label}
+          value={String(value ?? "{}")}
+          onChange={onChange}
+        />
+      );
+    default:
+      return null;
+  }
+}
 
 function ConfigFields({
   nodeId,
@@ -16,85 +131,24 @@ function ConfigFields({
   const definition = getNodeDefinition(nodeType);
   if (!definition) return null;
 
-  const entries = Object.entries(definition.defaultConfig);
-  if (entries.length === 0) return null;
+  const schema = definition.configSchema;
+
+  // If no configSchema, fall back to nothing (no generic fallback)
+  if (!schema || schema.length === 0) return null;
 
   return (
     <div className="space-y-2">
       <p className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
         Configuration
       </p>
-      {entries.map(([key, defaultVal]) => {
-        const currentVal = data[key] ?? defaultVal;
-
-        if (typeof defaultVal === "boolean" || typeof currentVal === "boolean") {
-          return (
-            <label key={key} className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={Boolean(currentVal)}
-                onChange={(e) =>
-                  updateNodeConfig(nodeId, { [key]: e.target.checked })
-                }
-                className="rounded border-panel-border"
-              />
-              <span className="text-xs text-text-primary">{key}</span>
-            </label>
-          );
-        }
-
-        if (typeof defaultVal === "number" || typeof currentVal === "number") {
-          return (
-            <div key={key}>
-              <label className="mb-0.5 block text-[10px] text-text-secondary">
-                {key}
-              </label>
-              <input
-                type="number"
-                className="w-full rounded border border-panel-border bg-canvas-bg px-2 py-1 text-xs text-text-primary focus:border-accent focus:outline-none"
-                value={Number(currentVal) || 0}
-                onChange={(e) =>
-                  updateNodeConfig(nodeId, {
-                    [key]: parseFloat(e.target.value) || 0,
-                  })
-                }
-              />
-            </div>
-          );
-        }
-
-        const isLong =
-          key === "template" ||
-          key === "code" ||
-          key === "systemPrompt" ||
-          key === "headers";
-        return (
-          <div key={key}>
-            <label className="mb-0.5 block text-[10px] text-text-secondary">
-              {key}
-            </label>
-            {isLong ? (
-              <textarea
-                className="w-full resize-none rounded border border-panel-border bg-canvas-bg px-2 py-1 text-xs text-text-primary focus:border-accent focus:outline-none"
-                rows={3}
-                value={String(currentVal ?? "")}
-                onChange={(e) =>
-                  updateNodeConfig(nodeId, { [key]: e.target.value })
-                }
-              />
-            ) : (
-              <input
-                type="text"
-                className="w-full rounded border border-panel-border bg-canvas-bg px-2 py-1 text-xs text-text-primary focus:border-accent focus:outline-none"
-                value={String(currentVal ?? "")}
-                onChange={(e) =>
-                  updateNodeConfig(nodeId, { [key]: e.target.value })
-                }
-              />
-            )}
-          </div>
-        );
-      })}
+      {schema.map((field) => (
+        <ConfigFieldRenderer
+          key={field.key}
+          field={field}
+          value={data[field.key] ?? definition.defaultConfig[field.key]}
+          onChange={(val) => updateNodeConfig(nodeId, { [field.key]: val })}
+        />
+      ))}
     </div>
   );
 }
@@ -156,18 +210,7 @@ export function InspectorPanel() {
           data={selectedNode.data as Record<string, unknown>}
         />
 
-        {output != null ? (
-          <div className="mt-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
-              Output
-            </p>
-            <pre className="mt-1 max-h-32 overflow-auto rounded border border-panel-border bg-canvas-bg p-2 text-[10px] text-green-400">
-              {typeof output === "string"
-                ? output
-                : JSON.stringify(output, null, 2)}
-            </pre>
-          </div>
-        ) : null}
+        {output != null ? <DataInspector data={output} /> : null}
 
         {error != null ? (
           <div className="mt-3">

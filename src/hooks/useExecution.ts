@@ -8,6 +8,8 @@ import {
   type ExecutionEvent,
   type FlowDocument,
 } from "../lib/tauri";
+import { validateFlow } from "../lib/flowValidator";
+import { useToast } from "./useToast";
 
 export function useExecution() {
   const nodes = useFlowStore((s) => s.nodes);
@@ -21,11 +23,36 @@ export function useExecution() {
   const failExecution = useExecutionStore((s) => s.failExecution);
   const cancelExecution = useExecutionStore((s) => s.cancelExecution);
   const addLog = useExecutionStore((s) => s.addLog);
+  const setValidationWarnings = useExecutionStore(
+    (s) => s.setValidationWarnings
+  );
   const flowName = useProjectStore((s) => s.currentFlowName);
   const flowId = useProjectStore((s) => s.currentFlowId);
+  const { toast } = useToast();
 
   const run = useCallback(async () => {
     if (executionStatus === "running") return;
+
+    // Run pre-flight validation
+    const warnings = validateFlow(nodes, edges);
+    if (warnings.length > 0) {
+      // Group warnings by node
+      const grouped: Record<string, string[]> = {};
+      for (const w of warnings) {
+        if (!grouped[w.nodeId]) grouped[w.nodeId] = [];
+        grouped[w.nodeId].push(w.message);
+      }
+      setValidationWarnings(grouped);
+
+      const warningMessages = warnings.map((w) => w.message);
+      toast({
+        title: `${warnings.length} validation warning${warnings.length > 1 ? "s" : ""}`,
+        description: warningMessages.slice(0, 3).join("; "),
+        variant: "warning",
+      });
+    } else {
+      setValidationWarnings({});
+    }
 
     startExecution();
     addLog({ level: "info", message: "Execution started" });
@@ -64,7 +91,10 @@ export function useExecution() {
         case "NodeCompleted":
           if (event.node_id) {
             setNodeStatus(event.node_id, "success");
-            if (event.output_preview) {
+            // Prefer full output data over preview string
+            if (event.output_data != null) {
+              setNodeOutput(event.node_id, event.output_data);
+            } else if (event.output_preview) {
               setNodeOutput(event.node_id, event.output_preview);
             }
             addLog({
@@ -97,13 +127,24 @@ export function useExecution() {
           level: "info",
           message: `Execution completed in ${result.total_duration_ms}ms`,
         });
+        toast({
+          title: "Execution complete",
+          description: `Finished in ${result.total_duration_ms}ms`,
+          variant: "success",
+        });
       } else {
         failExecution(result.error ?? "Unknown error");
+        toast({
+          title: "Execution failed",
+          description: result.error ?? "Unknown error",
+          variant: "error",
+        });
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       failExecution(msg);
       addLog({ level: "error", message: `Execution failed: ${msg}` });
+      toast({ title: "Execution failed", description: msg, variant: "error" });
     }
   }, [
     nodes,
@@ -118,6 +159,8 @@ export function useExecution() {
     completeExecution,
     failExecution,
     addLog,
+    setValidationWarnings,
+    toast,
   ]);
 
   const stop = useCallback(async () => {
@@ -125,13 +168,15 @@ export function useExecution() {
       await stopExecution();
       cancelExecution();
       addLog({ level: "warn", message: "Execution cancelled" });
+      toast({ title: "Execution cancelled", variant: "warning" });
     } catch (e) {
       // Still cancel locally even if backend call fails
       cancelExecution();
       const msg = e instanceof Error ? e.message : String(e);
       addLog({ level: "error", message: `Stop failed: ${msg}` });
+      toast({ title: "Stop failed", description: msg, variant: "error" });
     }
-  }, [addLog, cancelExecution]);
+  }, [addLog, cancelExecution, toast]);
 
   return { run, stop, status: executionStatus };
 }

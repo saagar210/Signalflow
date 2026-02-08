@@ -2,6 +2,7 @@ import { memo, type ReactNode } from "react";
 import { Position } from "@xyflow/react";
 import { NodeHandle } from "./NodeHandle";
 import { NodeStatusBadge, type NodeStatus } from "./NodeStatusBadge";
+import { DataPreview } from "./DataPreview";
 import { getNodeDefinition } from "../../lib/nodeRegistry";
 
 interface BaseNodeProps {
@@ -10,14 +11,17 @@ interface BaseNodeProps {
   label?: string;
   status?: NodeStatus;
   selected?: boolean;
+  warning?: string;
   children?: ReactNode;
 }
 
 export const BaseNode = memo(function BaseNode({
+  id,
   type,
   label,
   status = "idle",
   selected,
+  warning,
   children,
 }: BaseNodeProps) {
   const definition = getNodeDefinition(type);
@@ -25,13 +29,16 @@ export const BaseNode = memo(function BaseNode({
 
   const displayLabel = label ?? definition.label;
 
+  let borderClass = "border-panel-border";
+  if (selected) {
+    borderClass = "border-accent ring-1 ring-accent/30";
+  } else if (warning) {
+    borderClass = "border-amber-500/50";
+  }
+
   return (
     <div
-      className={`min-w-[180px] max-w-[260px] rounded-lg border bg-panel-bg shadow-lg ${
-        selected
-          ? "border-accent ring-1 ring-accent/30"
-          : "border-panel-border"
-      }`}
+      className={`min-w-[180px] max-w-[260px] rounded-lg border bg-panel-bg shadow-lg ${borderClass}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between rounded-t-lg border-b border-panel-border bg-panel-border/30 px-3 py-1.5">
@@ -74,6 +81,11 @@ export const BaseNode = memo(function BaseNode({
           {children}
         </div>
       )}
+
+      {/* Inline Data Preview */}
+      <div className="px-3 pb-2">
+        <DataPreview nodeId={id} />
+      </div>
     </div>
   );
 });

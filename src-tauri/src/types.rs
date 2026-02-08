@@ -134,6 +134,7 @@ pub enum ExecutionEvent {
     NodeCompleted {
         node_id: String,
         output_preview: String,
+        output_data: Option<serde_json::Value>,
         duration_ms: u64,
     },
     NodeError { node_id: String, error: String },
