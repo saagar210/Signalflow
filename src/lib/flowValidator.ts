@@ -46,22 +46,25 @@ export function validateFlow(
       }
     }
 
-    // 2. Check empty config values
+    // 2. Check empty required config values from schema metadata
     const data = (node.data ?? {}) as Record<string, unknown>;
     const schema = def.configSchema ?? [];
 
     for (const field of schema) {
-      const value = data[field.key] ?? def.defaultConfig[field.key];
+      if (!field.required) {
+        continue;
+      }
 
-      // Check key config fields that must not be empty
-      if (field.key === "path" || field.key === "url" || field.key === "pattern") {
-        if (!value || (typeof value === "string" && value.trim() === "")) {
-          warnings.push({
-            nodeId: node.id,
-            severity: "warning",
-            message: `${def.label}: "${field.label}" is empty`,
-          });
-        }
+      const value = data[field.key] ?? def.defaultConfig[field.key];
+      const isEmptyString = typeof value === "string" && value.trim() === "";
+      const isMissing = value === null || value === undefined;
+
+      if (isMissing || isEmptyString) {
+        warnings.push({
+          nodeId: node.id,
+          severity: "warning",
+          message: `${def.label}: "${field.label}" is empty`,
+        });
       }
     }
 
