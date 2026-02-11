@@ -8,6 +8,7 @@ export interface NodeCategory {
 export interface ConfigFieldSchema {
   key: string;
   label: string;
+  required?: boolean;
   widget:
     | "text"
     | "textarea"
@@ -95,7 +96,7 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     outputs: [{ id: "result", label: "Result", type: "string", required: false }],
     defaultConfig: { template: "Hello, {{name}}!" },
     configSchema: [
-      { key: "template", label: "Template", widget: "textarea", rows: 4, placeholder: "Hello, {{name}}!" },
+      { key: "template", label: "Template", required: true, widget: "textarea", rows: 4, placeholder: "Hello, {{name}}!" },
     ],
   },
   {
@@ -110,7 +111,7 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     ],
     defaultConfig: { path: "" },
     configSchema: [
-      { key: "path", label: "File Path", widget: "file-path-open", placeholder: "/path/to/file" },
+      { key: "path", label: "File Path", required: true, widget: "file-path-open", placeholder: "/path/to/file" },
     ],
   },
   {
@@ -125,7 +126,7 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     outputs: [{ id: "file", label: "File", type: "file", required: false }],
     defaultConfig: { path: "", append: false },
     configSchema: [
-      { key: "path", label: "File Path", widget: "file-path-save", placeholder: "/path/to/file" },
+      { key: "path", label: "File Path", required: true, widget: "file-path-save", placeholder: "/path/to/file" },
       { key: "append", label: "Append to file", widget: "checkbox" },
     ],
   },
@@ -144,7 +145,7 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     ],
     defaultConfig: { url: "", method: "GET", headers: "{}" },
     configSchema: [
-      { key: "url", label: "URL", widget: "text", placeholder: "https://api.example.com" },
+      { key: "url", label: "URL", required: true, widget: "text", placeholder: "https://api.example.com" },
       {
         key: "method",
         label: "Method",
@@ -182,7 +183,7 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     ],
     defaultConfig: { pattern: "", flags: "g", mode: "match" },
     configSchema: [
-      { key: "pattern", label: "Pattern", widget: "text", placeholder: "\\w+" },
+      { key: "pattern", label: "Pattern", required: true, widget: "text", placeholder: "\\w+" },
       { key: "flags", label: "Flags", widget: "text", placeholder: "g, i, m, s" },
       {
         key: "mode",
@@ -204,7 +205,7 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     outputs: [{ id: "output", label: "Output", type: "array", required: false }],
     defaultConfig: { condition: "item !== null", field: "" },
     configSchema: [
-      { key: "condition", label: "Condition", widget: "text", placeholder: "item !== null" },
+      { key: "condition", label: "Condition", required: true, widget: "text", placeholder: "item !== null" },
       { key: "field", label: "Field", widget: "text", placeholder: "Optional field name" },
     ],
   },
@@ -217,7 +218,7 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     outputs: [{ id: "output", label: "Output", type: "array", required: false }],
     defaultConfig: { expression: "item" },
     configSchema: [
-      { key: "expression", label: "Expression", widget: "text", placeholder: "item" },
+      { key: "expression", label: "Expression", required: true, widget: "text", placeholder: "item" },
     ],
   },
   {
@@ -271,7 +272,7 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     ],
     defaultConfig: { expression: "input !== null" },
     configSchema: [
-      { key: "expression", label: "Expression", widget: "text", placeholder: "input !== null" },
+      { key: "expression", label: "Expression", required: true, widget: "text", placeholder: "input !== null" },
     ],
   },
   {
@@ -317,7 +318,7 @@ export const NODE_DEFINITIONS: NodeDefinitionMeta[] = [
     outputs: [{ id: "output", label: "Output", type: "any", required: false }],
     defaultConfig: { code: "return input;" },
     configSchema: [
-      { key: "code", label: "Code", widget: "textarea", rows: 6, monospace: true, placeholder: "return input;" },
+      { key: "code", label: "Code", required: true, widget: "textarea", rows: 6, monospace: true, placeholder: "return input;" },
     ],
   },
 ];

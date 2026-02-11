@@ -52,6 +52,36 @@ describe("flowValidator", () => {
     expect(warnings.some((w) => w.message.includes("URL") && w.message.includes("empty"))).toBe(true);
   });
 
+  it("catches whitespace-only required expression on map", () => {
+    const nodes: Node[] = [
+      { id: "1", type: "numberInput", position: { x: 0, y: 0 }, data: { value: 1 } },
+      { id: "2", type: "map", position: { x: 200, y: 0 }, data: { expression: "   " } },
+      { id: "3", type: "debug", position: { x: 400, y: 0 }, data: {} },
+    ];
+    const edges: Edge[] = [
+      { id: "e1", source: "1", target: "2", sourceHandle: "value", targetHandle: "input" },
+      { id: "e2", source: "2", target: "3", sourceHandle: "output", targetHandle: "input" },
+    ];
+
+    const warnings = validateFlow(nodes, edges);
+    expect(warnings.some((w) => w.message.includes("Map") && w.message.includes("Expression") && w.message.includes("empty"))).toBe(true);
+  });
+
+  it("catches missing required code config", () => {
+    const nodes: Node[] = [
+      { id: "1", type: "textInput", position: { x: 0, y: 0 }, data: { value: "hello" } },
+      { id: "2", type: "code", position: { x: 200, y: 0 }, data: { code: "" } },
+      { id: "3", type: "debug", position: { x: 400, y: 0 }, data: {} },
+    ];
+    const edges: Edge[] = [
+      { id: "e1", source: "1", target: "2", sourceHandle: "value", targetHandle: "input" },
+      { id: "e2", source: "2", target: "3", sourceHandle: "output", targetHandle: "input" },
+    ];
+
+    const warnings = validateFlow(nodes, edges);
+    expect(warnings.some((w) => w.message.includes("Code") && w.message.includes("empty"))).toBe(true);
+  });
+
   it("catches orphan nodes", () => {
     const nodes: Node[] = [
       { id: "1", type: "textInput", position: { x: 0, y: 0 }, data: { value: "hello" } },
