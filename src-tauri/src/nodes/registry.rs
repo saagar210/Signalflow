@@ -36,6 +36,7 @@ impl NodeRegistry {
 
         // Control nodes
         executors.insert("conditional".to_string(), Box::new(ConditionalExecutor));
+        executors.insert("code".to_string(), Box::new(CodeExecutor));
 
         // AI nodes
         executors.insert("llmPrompt".to_string(), Box::new(LlmPromptExecutor));
