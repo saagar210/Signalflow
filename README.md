@@ -14,6 +14,10 @@ Current release posture:
 - Canonical local verification runs through `pnpm verify`
 - Release metadata is synced to `1.0.0` with bundle identifier `com.signalflow.desktop`
 
+Launch Contract: see `docs/launch-contract.md`
+
+Release Readiness: see `docs/release-readiness.md`
+
 ---
 
 ## What Can You Do With It?
