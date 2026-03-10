@@ -13,5 +13,7 @@ while IFS= read -r cmd || [[ -n "$cmd" ]]; do
   [[ "$cmd" =~ ^[[:space:]]*# ]] && continue
 
   echo ">> $cmd"
-  eval "$cmd"
+  (
+    eval "$cmd"
+  )
 done < "$COMMANDS_FILE"
