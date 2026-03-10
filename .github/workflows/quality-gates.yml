@@ -27,8 +27,15 @@ jobs:
       - name: Policy checks
         run: node scripts/ci/require-tests-and-docs.mjs
 
-      - name: Verify commands
-        run: bash .codex/scripts/run_verify_commands.sh
+      - name: Frontend and docs verification
+        run: |
+          pnpm git:guard:all
+          pnpm lint
+          pnpm typecheck
+          pnpm test -- --run
+          pnpm test:coverage
+          pnpm build
+          pnpm docs:check
 
       - name: Diff coverage
         if: github.event_name == 'pull_request'
