@@ -54,3 +54,10 @@ jobs:
             playwright-report/
             test-results/
             coverage/
+
+  quality-gates:
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - name: Confirm quality gate suite
+        run: echo "quality-gates suite passed"
