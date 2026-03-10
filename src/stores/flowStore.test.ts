@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useFlowStore } from "./flowStore";
 import type { Node } from "@xyflow/react";
+import { useProjectStore } from "./projectStore";
 
 function makeNode(id: string): Node {
   return {
@@ -14,6 +15,15 @@ function makeNode(id: string): Node {
 describe("flowStore", () => {
   beforeEach(() => {
     useFlowStore.getState().clear();
+    useProjectStore.setState({
+      currentFlowId: null,
+      currentFlowName: "Untitled Flow",
+      isDirty: false,
+      lastSavedAt: null,
+      recentFlows: [],
+      loading: true,
+      activeScreen: "welcome",
+    });
   });
 
   it("starts with empty nodes and edges", () => {
@@ -49,6 +59,45 @@ describe("flowStore", () => {
     useFlowStore.getState().addNode(makeNode("n1"));
     useFlowStore.getState().updateNodeConfig("n1", { value: "hello" });
     expect(useFlowStore.getState().nodes[0].data).toEqual({ value: "hello" });
+  });
+
+  it("loads an existing flow without marking the project dirty", () => {
+    useProjectStore.getState().markDirty();
+
+    useFlowStore
+      .getState()
+      .setFlow(
+        [makeNode("saved-node")],
+        [],
+        { x: 20, y: 30, zoom: 1.25 },
+        { persistedViewport: true },
+      );
+    useProjectStore.getState().setCurrentFlow("flow-1", "Saved Flow");
+
+    const state = useFlowStore.getState();
+    expect(state.nodes).toHaveLength(1);
+    expect(state.viewport).toEqual({ x: 20, y: 30, zoom: 1.25 });
+    expect(state.hasPersistedViewport).toBe(true);
+    expect(useProjectStore.getState().isDirty).toBe(false);
+  });
+
+  it("does not mark dirty when viewport updates are restoration-only", () => {
+    useFlowStore
+      .getState()
+      .setViewport({ x: 100, y: 200, zoom: 1.5 }, { markDirty: false });
+
+    expect(useFlowStore.getState().viewport).toEqual({
+      x: 100,
+      y: 200,
+      zoom: 1.5,
+    });
+    expect(useProjectStore.getState().isDirty).toBe(false);
+  });
+
+  it("marks dirty when viewport changes after user interaction", () => {
+    useFlowStore.getState().setViewport({ x: 10, y: 15, zoom: 0.9 });
+
+    expect(useProjectStore.getState().isDirty).toBe(true);
   });
 
   it("clears all nodes and edges", () => {
